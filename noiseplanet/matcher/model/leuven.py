@@ -112,27 +112,31 @@ def match_leuven(graph, track):
                              non_emitting_edgeid=False)
     edgeid, lastidx = matcher.match(path)
 
-    proj_dist = np.zeros(len(track))
-
     # edgeid refers to edges id (node1_id, node2_id) where the GPS point is projected
-    lat_corr, lon_corr = [], []
+    m_lat_corr, m_lon_corr = [], []
+    o_lat_corr, o_lon_corr = [], []
     lat_nodes = matcher.lattice_best
+    proj_dist = np.zeros(len(lat_nodes))
     for idx, m in enumerate(lat_nodes):
-        lat, lon = m.edge_m.pi[:2]
-        lat_corr.append(lat)
-        lon_corr.append(lon)
+        m_lat, m_lon = m.edge_m.pi[:2]
+        m_lat_corr.append(lat)
+        m_lon_corr.append(lon)
+        o_lat, o_lon = m.edge_o.pi[:2]
+        o_lat_corr.append(lat)
+        o_lon_corr.append(lon)
 
-        _, _, distance = geod.inv(track[idx][1], track[idx][0], lon, lat)
+        # _, _, distance = geod.inv(track[idx][1], track[idx][0], lon, lat)
+        _, _, distance = geod.inv(o_lon, o_lat, m_lon, m_lat)
         proj_dist[idx] += distance
 
-    track_corr = np.column_stack((lat_corr, lon_corr))
+    track_corr = np.column_stack((m_lat_corr, m_lon_corr))
     # Stack the stats
     path_length = []
     unlinked = []
     # Compute the route coordinates
     route = []
 
-    for i in range(len(track) - 1):
+    for i in range(len(lat_nodes) - 1):
         if edgeid[i] != edgeid[i+1]:
             route.append(track_corr[i])
             route.append([map_con.graph[edgeid[i][1]][0][0], map_con.graph[edgeid[i][1]][0][1]])
